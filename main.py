@@ -2,7 +2,8 @@ from src import (
     logger,
     parser,
     Path,
-    Manager
+    Manager,
+    Train
 )
 
 def main() -> None:
@@ -16,7 +17,8 @@ def main() -> None:
             save_loaction=Path.datasets
         )
 
-    
+    if args.train:
+        Train.execute(Path.muschroms, Path.models)
     
     logger.info("Finish application")
 

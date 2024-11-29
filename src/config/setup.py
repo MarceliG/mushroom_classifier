@@ -16,10 +16,10 @@ def parser() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--preprocessing",
-        "-p",
+        "--train",
+        "-t",
         action="store_true",
-        help="Perform data preprocessing.",
+        help="Train data",
     )
 
     return parser.parse_args()

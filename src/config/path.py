@@ -6,6 +6,7 @@ class Path:
     data_path = os.path.join(current_path, "data")
     datasets = os.path.join(data_path, "datasets")
     models = os.path.join(data_path, "models")
+    muschroms = os.path.join(datasets, "Mushrooms")
 
     # Create neccesery folders
     for directory in [
