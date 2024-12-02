@@ -18,7 +18,7 @@ def main() -> None:
         )
 
     if args.train:
-        Train.execute(Path.muschroms, Path.models)
+        Train.execute(Path.mushrooms, Path.models)
     
     logger.info("Finish application")
 
