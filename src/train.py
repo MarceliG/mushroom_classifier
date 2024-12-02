@@ -79,24 +79,24 @@ class Train:
             metrics=['accuracy']
         )
 
-        # early_stopping = EarlyStopping(
-        #     monitor='val_loss',
-        #     patience=5,
-        #     restore_best_weights=True
-        # )
+        early_stopping = EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            restore_best_weights=True
+        )
 
-        # checkpoint = ModelCheckpoint(
-        #     save_path,
-        #     save_best_only=True,
-        #     monitor='val_loss',
-        #     mode='min'
-        # )
+        checkpoint = ModelCheckpoint(
+            save_path,
+            save_best_only=True,
+            monitor='val_loss',
+            mode='min'
+        )
 
         model.fit(
             train_dataset,
             epochs=10,
             validation_data=validate_dataset,
-            # callbacks=[early_stopping, checkpoint],
+            callbacks=[early_stopping, checkpoint],
             verbose=1,
             # use_multiprocessing=True,
             # workers=4,
