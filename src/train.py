@@ -1,107 +1,97 @@
-import tensorflow as tf
-from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2B0, preprocess_input
+
+from src.resources import Preprocess
 
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class Train:
+    img_size = 150 # docelowo na 300
 
     @staticmethod
     def prepare(data_path: str):
-        training_datagen = ImageDataGenerator(
-            rescale=1.0 / 255,
-            validation_split=0.2,
-            rotation_range=40,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            shear_range=0.2,
-            zoom_range=0.2,
-            horizontal_flip=True,
-            fill_mode='nearest'
+        (train_data, val_data, test_data) = Preprocess(data_path).execute()
+
+        train_gen = ImageDataGenerator(
+            preprocessing_function = preprocess_input,
+            shear_range=10,
+            zoom_range=0.1,
+            vertical_flip=True
         )
 
-        train_generator = training_datagen.flow_from_directory(
-            data_path,
-            target_size=(150, 150),
-            batch_size=32,
-            class_mode='categorical',
-            subset='training'
+        train_ds = train_gen.flow_from_dataframe(
+            train_data,
+            directory=None,
+            x_col='filepath',
+            y_col='name',
+            target_size=(Train.img_size, Train.img_size),
+            batch_size=32
         )
 
-        valid_generator = training_datagen.flow_from_directory(
-            data_path,
-            target_size=(150, 150),
+        val_gen = ImageDataGenerator(preprocessing_function = preprocess_input)
+
+        val_ds = val_gen.flow_from_dataframe(
+            val_data,
+            directory=None,
+            x_col='filepath',
+            y_col='name',
+            target_size=(Train.img_size, Train.img_size),
             batch_size=32,
-            class_mode='categorical',
-            subset='validation'
+            shuffle=False
         )
 
         return (
-            train_generator,
-            valid_generator
+            train_ds,
+            val_ds
         )
     
     @staticmethod
-    def build_model():
-        return models.Sequential([
-            layers.Input(shape=(150, 150, 3)),
-            layers.Conv2D(64, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            
-            layers.Conv2D(128, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            
-            layers.Conv2D(128, (3, 3), activation='relu'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            # Flatten the result to feed into a DNN
-            layers.Flatten(),
-            # layers.Dropout(0.5),
-            # 512 neuron hidden layer
-            layers.Dense(512, activation='relu'),
-            layers.BatchNormalization(),
-            layers.Dense(9, activation='softmax')
-        ])
+    def build_model(
+        learning_rate = 0.01, 
+        size_inner=1000, 
+        size_inner_one=100, 
+        size_inner_two=100
+    ):
+
+        model = EfficientNetV2B0(
+            weights='imagenet',
+            include_top = False,
+            input_shape=(Train.img_size, Train.img_size, 3)
+        )
+
+        model.trainable = False
+
+        inputs = keras.Input(shape=(Train.img_size, Train.img_size, 3))
+        base = model(inputs, training=False)
+        vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+        inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+        inner_one = keras.layers.Dense(size_inner_one, activation='relu')(inner)
+        inner_two = keras.layers.Dense(size_inner_two, activation='relu')(inner_one)
+
+        outputs = keras.layers.Dense(9)(inner_two)
+        model = keras.Model(inputs, outputs)
+
+        optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+        loss = keras.losses.CategoricalCrossentropy(from_logits=True) # because multiclass classification
+        
+        model.compile(
+            optimizer=optimizer, 
+            loss=loss, 
+            metrics=['accuracy']
+        )
+        
+        return model
 
     @staticmethod
-    def execute(data_path: str, save_path: str) -> None:
-        (train_dataset, validate_dataset) = Train.prepare(data_path)
+    def execute(mushrooms_path: str, save_path: str) -> None:
+        (train_ds, val_ds) = Train.prepare(mushrooms_path)
 
         model = Train.build_model()
 
-        model.compile(
-            loss='categorical_crossentropy',
-            optimizer='adam',
-            metrics=['accuracy']
-        )
-
-        early_stopping = EarlyStopping(
-            monitor='val_loss',
-            patience=5,
-            restore_best_weights=True
-        )
-
-        checkpoint = ModelCheckpoint(
-            save_path,
-            save_best_only=True,
-            monitor='val_loss',
-            mode='min'
-        )
-
-        model.fit(
-            train_dataset,
-            epochs=10,
-            validation_data=validate_dataset,
-            callbacks=[early_stopping, checkpoint],
-            verbose=1,
-            # use_multiprocessing=True,
-            # workers=4,
-            # max_queue_size=20
-        )
+        model.fit(train_ds, epochs=10, validation_data=val_ds)
 
         model.save(save_path, save_format='tf')
 

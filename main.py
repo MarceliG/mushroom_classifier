@@ -3,6 +3,7 @@ from src import (
     parser,
     Path,
     Manager,
+    Preprocess,
     Train
 )
 
