@@ -2,16 +2,27 @@ import glob
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.utils import resample
+from src.graphs import Graphs
+from src.config.path import Path
 
 class Preprocess:
 
     def __init__(self, mushrooms_path):
         self.mushrooms_path = mushrooms_path
-
         self.data = {}
 
-    # Lista obrazów
     def get_image(self):
+        """
+        Collects image file paths and their corresponding class names from the dataset directory
+        and stores them in a DataFrame.
+
+        Returns:
+        None: Updates the `self.data` attribute with a DataFrame containing:
+            - 'filepath': The full file path to the image.
+            - 'name': The class name (folder name).
+        """
+
         image_list = []
 
         for filepath in glob.glob(os.path.join(self.mushrooms_path, "*", "*.jpg"), recursive=True):
@@ -20,20 +31,49 @@ class Preprocess:
         
         self.data = pd.DataFrame(image_list, columns = ['filepath', 'name'])
 
-    # Pobierz nazwy klas
     def get_classes(self):
+        """
+        Retrieves a list of unique class names from the dataset.
+
+        Returns:
+            numpy.ndarray: A list of unique class names extracted from the 'name' column of the DataFrame.
+        """
+
         return self.data['name'].unique()
 
-    
-    def execute(self):
-        self.get_image()
+    # Balance the number of images in each class
+    def balance_classes(self):
+        min_class_size = self.data['name'].value_counts().min()
+        balanced_data = pd.DataFrame(columns=self.data.columns)
+
+        for mushroom_class in self.get_classes():
+            class_data = self.data[self.data['name'] == mushroom_class]
+            if len(class_data) > min_class_size:
+                # Undersampling
+                class_data = resample(class_data, replace=False, n_samples=min_class_size, random_state=42)
+            
+            balanced_data = pd.concat([balanced_data, class_data], ignore_index=True)
+        
+        self.data = balanced_data
+
+    def create_data_for_learning(self):
+        """
+        Splits the dataset into training, validation, and test datasets for machine learning.
+
+        Returns:
+            tuple: A tuple containing three pandas DataFrames:
+                - train_data: DataFrame with training data.
+                - val_data: DataFrame with validation data.
+                - test_data: DataFrame with test data.
+        """
+
         mushroom_classes = self.get_classes()
 
         train_data = pd.DataFrame(columns = ['filepath', 'name'])
         val_data = pd.DataFrame(columns = ['filepath', 'name'])
         test_data = pd.DataFrame(columns = ['filepath', 'name'])
 
-        # Tworzę dane treningowe i testowe
+        # Creating training and test data
         full_train_data = pd.DataFrame(columns = ['filepath', 'name'])
         for mushroom in mushroom_classes:
             temp = self.data[self.data['name'] == mushroom].copy()
@@ -46,7 +86,7 @@ class Preprocess:
             full_train_data = pd.concat([full_train_data, train_ls], ignore_index=True, sort=False)
             test_data = pd.concat([test_data, test_ls], ignore_index=True, sort=False)
 
-        # Tworzę dane treningowe, walidacyjne i testowe
+        # Creating training, validation, and test data
         train_data = pd.DataFrame(columns = ['filepath', 'name'])
         val_data = pd.DataFrame(columns = ['filepath', 'name'])
         for mushroom in mushroom_classes:
@@ -61,10 +101,26 @@ class Preprocess:
 
         
         return (train_data, val_data, test_data)
+    
+    def execute(self):
+        """
+        Preporcess data
 
-        
+        Returns:
+            tuple: A tuple containing three pandas DataFrames:
+                - train_data: DataFrame with training data.
+                - val_data: DataFrame with validation data.
+                - test_data: DataFrame with test data.
+        """
 
+        # Create an image array
+        self.get_image()
+        # Generate a report
+        Graphs.images_count(self.data, Path.graphs_images_count, 'Mushroom class distribution')
 
+        # Balance the number of images
+        self.balance_classes()
+        # Generate a report after balancing
+        Graphs.images_count(self.data, Path.graphs_images_balances_count, 'Mushroom class distribution balanced')
 
-
-
+        return self.create_data_for_learning()

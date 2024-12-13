@@ -3,7 +3,6 @@ from src import (
     parser,
     Path,
     Manager,
-    Preprocess,
     Train
 )
 
@@ -15,11 +14,12 @@ def main() -> None:
         Manager.download_dataset(
             author="maysee",
             dataset_name="mushrooms-classification-common-genuss-images", 
-            save_loaction=Path.datasets
+            save_loaction=Path.datasets,
+            extract_folder="Mushrooms"
         )
 
     if args.train:
-        Train.execute(Path.mushrooms, Path.models)
+        Train.execute(Path.mushrooms, Path.models_filename)
     
     logger.info("Finish application")
 
