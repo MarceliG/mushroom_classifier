@@ -2,11 +2,9 @@
 
 import argparse
 
-def parser() -> argparse.Namespace:
 
-    parser = argparse.ArgumentParser(
-        description="Application for recognize mushroom image from photo"
-    )
+def parser() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Application for recognize mushroom image from photo")
 
     # Download and unzip dataset
     parser.add_argument(

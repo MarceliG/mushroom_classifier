@@ -1,12 +1,13 @@
 import os
 
+
 class Path:
     current_path = os.getcwd()
-    
+
     # Directories
     data_path = os.path.join(current_path, "data")
     datasets = os.path.join(data_path, "datasets")
-    
+
     # Models folder
     models = os.path.join(data_path, "models")
     models_filename = os.path.join(models, "model.keras")
@@ -21,11 +22,6 @@ class Path:
     mushrooms = os.path.join(datasets, "Mushrooms")
 
     # Create neccesery folders
-    for directory in [
-        data_path,
-        models,
-        datasets,
-        graphs
-    ]:
+    for directory in [data_path, models, datasets, graphs]:
         if not os.path.exists(directory):
             os.makedirs(directory)

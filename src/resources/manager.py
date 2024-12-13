@@ -1,10 +1,12 @@
 import os
 import zipfile
+
 import kaggle
+
 from src import logger
 
-class Manager:
 
+class Manager:
     @staticmethod
     def download_dataset(author: str, dataset_name: str, save_loaction: str, extract_folder: str = "") -> None:
         """
@@ -19,20 +21,18 @@ class Manager:
         Returns:
             None
         """
-        
         # Need Kaggle account to dowload it
         api = kaggle.KaggleApi()
         api.authenticate()
 
         # Download
-        logger.info('Start downloading dataset')
+        logger.info("Start downloading dataset")
         full_dataset_name = f"{author}/{dataset_name}"
         api.dataset_download_files(full_dataset_name, path=save_loaction)
 
         # Unzip
-        logger.info(f'Unzip folder {extract_folder}')
+        logger.info(f"Unzip folder {extract_folder}")
         Manager.unzip_dataset(dataset_name, save_loaction, extract_folder)
-
 
     @staticmethod
     def unzip_dataset(dataset_name: str, save_loaction: str, extract_folder: str = "") -> None:
@@ -47,11 +47,10 @@ class Manager:
         Returns:
             None
         """
-
         zip_path = os.path.join(save_loaction, f"{dataset_name}.zip")
 
         # Unzip the dataset
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             if extract_folder:
                 for file in zip_ref.namelist():
                     if file.startswith(extract_folder):

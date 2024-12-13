@@ -1,6 +1,5 @@
-from .config import parser, Path
-from .logs import logger
-from .resources import Manager
-from .train import Train
-from .resources import Preprocess
+from .config import Path, parser
 from .graphs import Graphs
+from .logs import logger
+from .resources import Manager, Preprocess
+from .train import Train

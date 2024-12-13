@@ -1,19 +1,21 @@
-from tensorflow import keras
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2B0, preprocess_input
-
-from src.resources import Preprocess
-from src.graphs import Graphs
-
 from PIL import ImageFile
+from tensorflow import keras
+from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2B0, preprocess_input
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+from src import logger
+from src.graphs import Graphs
+from src.resources import Preprocess
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 
 class Train:
     img_size = 300
 
     @staticmethod
-    def prepare(data_path: str):
+    def prepare(data_path: str) -> tuple:
         """
         Prepares training, validation, and test datasets from the provided data path.
 
@@ -27,66 +29,58 @@ class Train:
                 - val_ds: The validation dataset generator.
                 - test_ds: The test dataset generator.
         """
-
         (train_data, val_data, test_data) = Preprocess(data_path).execute()
 
         # Create train dataset
         train_gen = ImageDataGenerator(
-            preprocessing_function = preprocess_input,
-            shear_range=10,
-            zoom_range=0.1,
-            vertical_flip=True
+            preprocessing_function=preprocess_input, shear_range=10, zoom_range=0.1, vertical_flip=True
         )
 
         train_ds = train_gen.flow_from_dataframe(
             train_data,
             directory=None,
-            x_col='filepath',
-            y_col='name',
+            x_col="filepath",
+            y_col="name",
             target_size=(Train.img_size, Train.img_size),
-            batch_size=32
+            batch_size=32,
         )
 
         # Create validate dataset
-        val_gen = ImageDataGenerator(preprocessing_function = preprocess_input)
+        val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
         val_ds = val_gen.flow_from_dataframe(
             val_data,
             directory=None,
-            x_col='filepath',
-            y_col='name',
+            x_col="filepath",
+            y_col="name",
             target_size=(Train.img_size, Train.img_size),
             batch_size=32,
-            shuffle=False
+            shuffle=False,
         )
 
         # Create test dataset
-        test_gen = ImageDataGenerator(preprocessing_function = preprocess_input)
+        test_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
         test_ds = test_gen.flow_from_dataframe(
             test_data,
             directory=None,
-            x_col='filepath',
-            y_col='name',
+            x_col="filepath",
+            y_col="name",
             target_size=(Train.img_size, Train.img_size),
             batch_size=32,
-            shuffle=False
+            shuffle=False,
         )
 
-        return (
-            train_ds,
-            val_ds,
-            test_ds
-        )
-    
+        return (train_ds, val_ds, test_ds)
+
     @staticmethod
     def build_model(
-        learning_rate = 0.001, 
-        size_inner=1000, 
-        size_inner_one=1000, 
-        size_inner_two=100,
-        droprate=0.2
-    ):
+        learning_rate: float = 0.001,
+        size_inner: int = 1000,
+        size_inner_one: int = 1000,
+        size_inner_two: int = 100,
+        droprate: float = 0.2,
+    ) -> keras.Model:
         """
         Builds and compiles a neural network model using EfficientNetV2B0 as the base.
 
@@ -100,12 +94,7 @@ class Train:
         Returns:
             keras.Model: A compiled Keras model.
         """
-
-        model = EfficientNetV2B0(
-            weights='imagenet',
-            include_top = False,
-            input_shape=(Train.img_size, Train.img_size, 3)
-        )
+        model = EfficientNetV2B0(weights="imagenet", include_top=False, input_shape=(Train.img_size, Train.img_size, 3))
 
         model.trainable = False
 
@@ -114,9 +103,9 @@ class Train:
         vectors = keras.layers.GlobalAveragePooling2D()(base)
 
         # Add custom fully connected layers.
-        inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
-        inner_one = keras.layers.Dense(size_inner_one, activation='relu')(inner)
-        inner_two = keras.layers.Dense(size_inner_two, activation='relu')(inner_one)
+        inner = keras.layers.Dense(size_inner, activation="relu")(vectors)
+        inner_one = keras.layers.Dense(size_inner_one, activation="relu")(inner)
+        inner_two = keras.layers.Dense(size_inner_two, activation="relu")(inner_one)
 
         drop = keras.layers.Dropout(droprate)(inner_two)
 
@@ -124,14 +113,10 @@ class Train:
         model = keras.Model(inputs, outputs)
 
         optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
-        loss = keras.losses.CategoricalCrossentropy(from_logits=True) # because multiclass classification
-        
-        model.compile(
-            optimizer=optimizer, 
-            loss=loss, 
-            metrics=['accuracy']
-        )
-        
+        loss = keras.losses.CategoricalCrossentropy(from_logits=True)  # because multiclass classification
+
+        model.compile(optimizer=optimizer, loss=loss, metrics=["accuracy"])
+
         return model
 
     @staticmethod
@@ -146,34 +131,19 @@ class Train:
         Returns:
             None
         """
-
         (train_ds, val_ds, test_ds) = Train.prepare(mushrooms_path)
 
         model = Train.build_model()
 
-        early_stopping = EarlyStopping(
-            monitor='val_accuracy',
-            patience=5,
-            restore_best_weights=True
-        )
+        early_stopping = EarlyStopping(monitor="val_accuracy", patience=5, restore_best_weights=True)
 
-        checkpoint = ModelCheckpoint(
-            save_path,
-            save_best_only=True,
-            monitor='val_accuracy',
-            mode='max'
-        )
+        checkpoint = ModelCheckpoint(save_path, save_best_only=True, monitor="val_accuracy", mode="max")
 
-        fit_history = model.fit(
-            train_ds, 
-            epochs=1, 
-            validation_data=val_ds, 
-            callbacks=[early_stopping, checkpoint]
-        )
+        fit_history = model.fit(train_ds, epochs=10, validation_data=val_ds, callbacks=[early_stopping, checkpoint])
 
         model.save(save_path)
         Graphs.create_model_graph(fit_history)
 
         # Testing the model on test data it hasn't seen yet
-        print('Test model on data it doesnt see')
+        logger.info("Test model on data it doesnt see")
         model.evaluate(test_ds)
