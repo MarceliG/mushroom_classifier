@@ -1,4 +1,7 @@
-from src import Manager, Path, Train, logger, parser
+from src import Predict, Train
+from src.config import Path, parser
+from src.logs import logger
+from src.resources import Manager
 
 
 def main() -> None:
@@ -14,7 +17,12 @@ def main() -> None:
         )
 
     if args.train:
-        Train.execute(Path.mushrooms, Path.models_filename)
+        train = Train()
+        train.execute(Path.mushrooms, Path.models_filename, Path.models_json)
+
+    if args.predict:
+        predict = Predict()
+        predict.execute(image_folder=Path.predict_path)
 
     logger.info("Finish application")
 

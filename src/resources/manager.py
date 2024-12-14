@@ -1,9 +1,13 @@
+import json
 import os
 import zipfile
+from typing import Any
 
 import kaggle
+from tensorflow.keras.utils import Sequence
 
-from src import logger
+from src.config import Path
+from src.logs import logger
 
 
 class Manager:
@@ -60,3 +64,17 @@ class Manager:
 
         # Remove zip file
         os.remove(zip_path)
+
+    @staticmethod
+    def save_classes_as_json(json_path: str, train_ds: Sequence) -> None:
+        classes = list(train_ds.class_indices.keys())
+
+        with open(json_path, "w") as f:
+            json.dump(classes, f)
+
+        logger.info(f"Classes saved to {json_path}")
+
+    @staticmethod
+    def load_json_classes() -> Any:
+        with open(Path.models_json) as f:
+            return json.load(f)

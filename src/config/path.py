@@ -11,6 +11,10 @@ class Path:
     # Models folder
     models = os.path.join(data_path, "models")
     models_filename = os.path.join(models, "model.keras")
+    models_json = os.path.join(models, "classes.json")
+
+    # Image for predict
+    predict_path = os.path.join(data_path, "predict")
 
     # Graphs folder
     graphs = os.path.join(data_path, "graphs")
@@ -22,6 +26,6 @@ class Path:
     mushrooms = os.path.join(datasets, "Mushrooms")
 
     # Create neccesery folders
-    for directory in [data_path, models, datasets, graphs]:
+    for directory in [data_path, models, datasets, graphs, predict_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)

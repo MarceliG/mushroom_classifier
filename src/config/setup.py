@@ -19,7 +19,10 @@ def parser() -> argparse.Namespace:
         "--train",
         "-t",
         action="store_true",
-        help="Train data",
+        help="Train model",
     )
+
+    # Predict model
+    parser.add_argument("--predict", "-p", action="store_true", help="Predict model")
 
     return parser.parse_args()

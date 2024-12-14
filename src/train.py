@@ -4,9 +4,9 @@ from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2B0, prep
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-from src import logger
 from src.graphs import Graphs
-from src.resources import Preprocess
+from src.logs import logger
+from src.resources import Manager, Preprocess
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -14,8 +14,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class Train:
     img_size = 300
 
-    @staticmethod
-    def prepare(data_path: str) -> tuple:
+    def prepare(self, data_path: str) -> tuple:
         """
         Prepares training, validation, and test datasets from the provided data path.
 
@@ -73,8 +72,8 @@ class Train:
 
         return (train_ds, val_ds, test_ds)
 
-    @staticmethod
     def build_model(
+        self,
         learning_rate: float = 0.001,
         size_inner: int = 1000,
         size_inner_one: int = 1000,
@@ -119,31 +118,41 @@ class Train:
 
         return model
 
-    @staticmethod
-    def execute(mushrooms_path: str, save_path: str) -> None:
+    def test_model(self, model: keras.Model, test_ds: tuple) -> None:
+        logger.info("Test model:")
+
+        test_loss, test_accuracy = model.evaluate(test_ds)
+
+        logger.info(f"Test Loss: {test_loss}, Test Accuracy: {test_accuracy}")
+
+    def execute(self, mushrooms_path: str, save_path: str, json_path: str) -> None:
         """
         Executes the training pipeline for a model with the provided dataset and saves the model.
 
         Args:
             mushrooms_path (str): Path to the dataset containing training, validation, and test data.
             save_path (str): Path to save the trained model.
+            json_path (str): Path to save json image classes.
 
         Returns:
             None
         """
-        (train_ds, val_ds, test_ds) = Train.prepare(mushrooms_path)
+        (train_ds, val_ds, test_ds) = self.prepare(mushrooms_path)
 
-        model = Train.build_model()
-
+        model = self.build_model()
         early_stopping = EarlyStopping(monitor="val_accuracy", patience=5, restore_best_weights=True)
-
         checkpoint = ModelCheckpoint(save_path, save_best_only=True, monitor="val_accuracy", mode="max")
 
-        fit_history = model.fit(train_ds, epochs=10, validation_data=val_ds, callbacks=[early_stopping, checkpoint])
+        fit_history = model.fit(train_ds, epochs=5, validation_data=val_ds, callbacks=[early_stopping, checkpoint])
 
+        # Save real class name to json
+        Manager.save_classes_as_json(json_path, train_ds)
+
+        # Save model
         model.save(save_path)
+
+        # Create graph
         Graphs.create_model_graph(fit_history)
 
         # Testing the model on test data it hasn't seen yet
-        logger.info("Test model on data it doesnt see")
-        model.evaluate(test_ds)
+        self.test_model(model, test_ds)

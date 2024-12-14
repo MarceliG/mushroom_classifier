@@ -1,5 +1,3 @@
-from .config import Path, parser
 from .graphs import Graphs
-from .logs import logger
-from .resources import Manager, Preprocess
+from .predict import Predict
 from .train import Train
