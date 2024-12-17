@@ -21,6 +21,7 @@ class Path:
     graphs_images_count = os.path.join(graphs, "images_count.png")
     graphs_images_balances_count = os.path.join(graphs, "images_count_balances.png")
     graphs_model_train_history = os.path.join(graphs, "model_train_history.png")
+    classification_report_path = os.path.join(graphs, "classification_report_path.txt")
 
     # Mushrooms image main folder
     mushrooms = os.path.join(datasets, "Mushrooms")

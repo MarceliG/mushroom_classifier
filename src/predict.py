@@ -1,4 +1,3 @@
-import glob
 import os
 
 import numpy as np
@@ -18,18 +17,6 @@ class Predict:
         self.model = load_model(self.model_path)
         self.classes = Manager.load_json_classes()
 
-    def get_images_from_folder(self, folder_path: str) -> list:
-        """
-        Retrieves all image file paths from a folder.
-
-        Args:
-            folder_path (str): Path to the folder containing images.
-
-        Returns:
-            list: List of file paths for all images in the folder.
-        """
-        return glob.glob(os.path.join(folder_path, "**/*.jpg"), recursive=True)
-
     def execute(self, image_folder: str) -> None:
         """
         Executes the prediction pipeline on a folder of images.
@@ -41,7 +28,7 @@ class Predict:
             None
         """
         # Get all image paths from the folder
-        image_paths = self.get_images_from_folder(image_folder)
+        image_paths = Manager.get_images_from_folder(image_folder)
 
         if not image_paths:
             logger.info("No images found in the specified folder.")

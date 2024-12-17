@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from sklearn.metrics import classification_report
+from tensorflow.keras import Model
 from tensorflow.keras.callbacks import History
+from tensorflow.keras.utils import Sequence
 
 from src.config.path import Path
+from src.logs import logger
 
 
 class Graphs:
@@ -64,3 +69,25 @@ class Graphs:
 
         plt.savefig(Path.graphs_model_train_history)
         plt.close()
+
+    @staticmethod
+    def create_classification_report(model: Model, train_ds: Sequence, test_ds: Sequence) -> None:
+        # Predict on the test dataset
+        y_pred_logits = model.predict(test_ds)
+        y_pred = np.argmax(y_pred_logits, axis=1)  # Convert logits to class indices
+
+        # True labels
+        y_true = test_ds.labels  # Ground truth class indices from the generator
+
+        # Class names from the training dataset
+        class_names = list(train_ds.class_indices.keys())
+
+        # Generate and print classification report
+        report = classification_report(y_true, y_pred, target_names=class_names, zero_division=0)
+        logger.info("Classification Report:\n", report)
+
+        # Save the classification report as a text file
+        with open(Path.classification_report_path, "w") as file:
+            file.write("Classification Report\n")
+            file.write("=====================\n")
+            file.write(report)

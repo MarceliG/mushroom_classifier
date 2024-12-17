@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import zipfile
@@ -78,3 +79,16 @@ class Manager:
     def load_json_classes() -> Any:
         with open(Path.models_json) as f:
             return json.load(f)
+
+    @staticmethod
+    def get_images_from_folder(folder_path: str) -> list:
+        """
+        Retrieves all image file paths from a folder.
+
+        Args:
+            folder_path (str): Path to the folder containing images.
+
+        Returns:
+            list: List of file paths for all images in the folder.
+        """
+        return glob.glob(os.path.join(folder_path, "**/*.jpg"), recursive=True)

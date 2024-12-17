@@ -1,4 +1,3 @@
-import glob
 import os
 
 import numpy as np
@@ -8,6 +7,7 @@ from sklearn.utils import resample
 
 from src.config.path import Path
 from src.graphs import Graphs
+from src.resources.manager import Manager
 
 
 class Preprocess:
@@ -27,9 +27,9 @@ class Preprocess:
         """
         image_list = []
 
-        for filepath in glob.glob(os.path.join(self.mushrooms_path, "*", "*.jpg"), recursive=True):
-            mushroom_class = filepath.split("/")[-2]
-            image_list.append((filepath, mushroom_class))
+        for filepath in Manager.get_images_from_folder(self.mushrooms_path):
+            class_name = os.path.basename(os.path.dirname(filepath))
+            image_list.append((filepath, class_name))
 
         self.data = pd.DataFrame(image_list, columns=["filepath", "name"])
 

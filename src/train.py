@@ -154,5 +154,8 @@ class Train:
         # Create graph
         Graphs.create_model_graph(fit_history)
 
+        # Create classification report
+        Graphs.create_classification_report(model, train_ds, test_ds)
+
         # Testing the model on test data it hasn't seen yet
         self.test_model(model, test_ds)
