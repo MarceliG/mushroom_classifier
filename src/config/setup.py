@@ -2,12 +2,11 @@
 
 import argparse
 
+
 def parser() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Application for recognize mushroom image from photo")
 
-    parser = argparse.ArgumentParser(
-        description="Application for recognize image from photo"
-    )
-
+    # Download and unzip dataset
     parser.add_argument(
         "--download",
         "-d",
@@ -15,11 +14,15 @@ def parser() -> argparse.Namespace:
         help="Download dataset.",
     )
 
+    # Train model
     parser.add_argument(
         "--train",
         "-t",
         action="store_true",
-        help="Train data",
+        help="Train model",
     )
+
+    # Predict model
+    parser.add_argument("--predict", "-p", action="store_true", help="Predict model")
 
     return parser.parse_args()
